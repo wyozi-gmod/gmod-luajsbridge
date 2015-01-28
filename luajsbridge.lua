@@ -57,16 +57,18 @@ function luajsbridge.Meta:__call(...)
 	self._pnl:RunJavascript(js)
 end
 
--- Override DHTML:Init() to automatically create a Bridge per DHTML component
-local tbl = vgui.GetControlTable("DHTML")
+hook.Add("InitPostEntity", "LJSBridge_OverrideDHTMLInit", function()
+    -- Override DHTML:Init() to automatically create a Bridge per DHTML component
+    local tbl = vgui.GetControlTable("DHTML")
 
-local oldinit = tbl.OldInit or tbl.Init
-tbl.OldInit = oldinit
-function tbl:Init()
-	oldinit(self)
+    local oldinit = tbl.OldInit or tbl.Init
+    tbl.OldInit = oldinit
+    function tbl:Init()
+    	oldinit(self)
 
-	self.Bridge = luajsbridge.CreateBridge(self)
-end
+    	self.Bridge = luajsbridge.CreateBridge(self)
+    end
+end)
 
 concommand.Add("ljsbridge_test", function()
     local dhtml = vgui.Create("DHTML")
