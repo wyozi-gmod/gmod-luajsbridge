@@ -12,6 +12,12 @@ function luajsbridge.JSEscape(str)
 	return str:gsub("\\", "\\\\"):gsub("\"", "\\\""):gsub("\'", "\\'"):gsub("\r", "\\r"):gsub("\n", "\\n")
 end
 
+-- If you want arrays to be handled properly, you need https://github.com/craigmj/json4lua
+function luajsbridge.JSONify(tbl)
+	if type(json) == "table" and json.encode then return json.encode(tbl) end
+	return util.TableToJSON(tbl)
+end
+
 function luajsbridge.ToJS(obj)
 	local t = type(obj)
 	if t == "string" then
@@ -19,7 +25,7 @@ function luajsbridge.ToJS(obj)
 	elseif t == "number" then
 		return tostring(obj)
 	elseif t == "table" then
-		return "JSON.parse(\"" .. luajsbridge.JSEscape(util.TableToJSON(obj)) .. "\")"
+		return "JSON.parse(" .. luajsbridge.ToJS(luajsbridge.JSONify(obj)) .. ")"
 	elseif t == "function" then
 		local id = #luajsbridge.Callbacks + 1
 		luajsbridge.Callbacks[id] = obj
@@ -89,12 +95,15 @@ concommand.Add("ljsbridge_test", function()
 		<script>
 		test = {}
 		test.inner = {}
-		test.inner.func = function(str, num, obj, cb) {
+		test.inner.func = function(str, num, obj, arr, cb) {
 			console.log("str: " + str);
 			console.log("num: " + num);
 			console.log("obj.str: " + obj.str);
 			console.log("obj.num: " + obj.num);
 			console.log("obj.innerTable.key: " + obj.innerTable.key);
+
+			console.log("arr[1]: " + arr[1]);
+			console.log("arr[2].a: " + arr[2].a);
 
 			cb("js-string", 32);
 		}
@@ -109,7 +118,7 @@ concommand.Add("ljsbridge_test", function()
 		innerTable = {
 			key = "value"
 		}
-	}, function(a, b)
+	}, {3, 2, {a = "b"}}, function(a, b)
 		print("callback: ", a, b)
 	end)
 
